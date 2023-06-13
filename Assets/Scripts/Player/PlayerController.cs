@@ -8,21 +8,33 @@ namespace Player
     public class PlayerController : MonoBehaviour
     {
         private CharacterController _controller;
+        [SerializeField] private Animator _animator;
     
         #region Variables: Movement
         private const float _MOVE_SPEED = 5f;
-        // =====> _move is now a Vector2 instead of Vector3 for gamepad compatibility
         private Vector2 _move;
+        private bool _running;
         #endregion
-    
+
+        #region Variables: Animation
+        private int _animRunningParamHash;
+        #endregion
+
         #region Variables: Inputs
         private DefaultInputActions _inputActions;
         private InputAction _moveAction;
         #endregion
+
+        private Transform _animatorTransform;
+
         private void Awake()
         {
             _inputActions = new DefaultInputActions();
             _controller = GetComponent<CharacterController>();
+
+            _running = false;
+            _animRunningParamHash = Animator.StringToHash("Running");
+            _animatorTransform = _animator.transform;
         }
 
         private void OnEnable()
@@ -39,11 +51,29 @@ namespace Player
         private void Update()
         { 
             _move = _moveAction.ReadValue<Vector2>();
+            if (_move.sqrMagnitude > 0.01f)
+            {
+                if (!_running)
+                {
+                    _running = true;
+                    _animator.SetBool(_animRunningParamHash, true);
+                }
+
+            Vector3 v = new Vector3(_move.x, 0f, _move.y);
+            _animatorTransform.rotation =
+                Quaternion.LookRotation(-v, Vector3.up);    
             _controller.Move(
-                new Vector3(_move.x, 0f, _move.y) *
+                v *
                 Time.deltaTime *
                 _MOVE_SPEED);
-         }
+            }
+                
+            else if (_running)
+            {
+                _running = false;
+                _animator.SetBool(_animRunningParamHash, false);
+            }
+        }
     }
 
 }
